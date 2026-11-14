@@ -1,0 +1,42 @@
+
+using CentralITAssistant.Domain.Entities;
+using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore.Metadata.Builders;
+
+namespace CentralITAssistant.Infrastructure.Persistence.Configurations;
+
+public class EmployeeConfiguration : IEntityTypeConfiguration<Employee>
+{
+    public void Configure(EntityTypeBuilder<Employee> builder)
+    {
+        builder.ToTable("Employees");
+
+        builder.HasKey(e => e.Id);
+
+        builder.Property(e => e.FullName)
+            .IsRequired()
+            .HasMaxLength(150);
+
+        builder.Property(e => e.CorporateEmail)
+            .IsRequired()
+            .HasMaxLength(256);
+
+        builder.HasIndex(e => e.CorporateEmail)
+            .IsUnique();
+
+        builder.Property(e => e.PersonalEmail)
+            .HasMaxLength(256);
+
+        builder.Property(e => e.IsActive)
+            .IsRequired();
+
+        builder.Property(e => e.CreatedAt)
+            .IsRequired();
+
+        // Employee 1:1 WhatsAppContact
+        builder.HasOne(e => e.WhatsAppContact)
+            .WithOne(w => w.Employee)
+            .HasForeignKey<WhatsAppContact>(w => w.EmployeeId)
+            .OnDelete(DeleteBehavior.Restrict);
+    }
+}
