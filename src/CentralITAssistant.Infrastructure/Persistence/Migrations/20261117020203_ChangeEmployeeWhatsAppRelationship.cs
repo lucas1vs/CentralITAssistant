@@ -1,0 +1,40 @@
+﻿using Microsoft.EntityFrameworkCore.Migrations;
+
+#nullable disable
+
+namespace CentralITAssistant.Infrastructure.Persistence.Migrations
+{
+    /// <inheritdoc />
+    public partial class ChangeEmployeeWhatsAppRelationship : Migration
+    {
+        /// <inheritdoc />
+        protected override void Up(MigrationBuilder migrationBuilder)
+        {
+            migrationBuilder.DropIndex(
+                name: "IX_WhatsAppContacts_EmployeeId",
+                table: "WhatsAppContacts");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_WhatsAppContacts_EmployeeId",
+                table: "WhatsAppContacts",
+                column: "EmployeeId",
+                unique: true,
+                filter: "[EmployeeId] IS NOT NULL AND [IsActive] = 1");
+        }
+
+        /// <inheritdoc />
+        protected override void Down(MigrationBuilder migrationBuilder)
+        {
+            migrationBuilder.DropIndex(
+                name: "IX_WhatsAppContacts_EmployeeId",
+                table: "WhatsAppContacts");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_WhatsAppContacts_EmployeeId",
+                table: "WhatsAppContacts",
+                column: "EmployeeId",
+                unique: true,
+                filter: "[EmployeeId] IS NOT NULL");
+        }
+    }
+}

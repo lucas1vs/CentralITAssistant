@@ -17,15 +17,20 @@ public class EmployeeConfiguration : IEntityTypeConfiguration<Employee>
             .IsRequired()
             .HasMaxLength(150);
 
-        builder.Property(e => e.CorporateEmail)
+        builder.Property(e => e.PersonalEmail)
             .IsRequired()
             .HasMaxLength(256);
 
-        builder.HasIndex(e => e.CorporateEmail)
+        builder.HasIndex(e => e.PersonalEmail)
             .IsUnique();
 
-        builder.Property(e => e.PersonalEmail)
+        builder.Property(e => e.CorporateEmail)
+            .IsRequired(false)
             .HasMaxLength(256);
+
+        builder.HasIndex(e => e.CorporateEmail)
+            .IsUnique()
+            .HasFilter("[CorporateEmail] IS NOT NULL");
 
         builder.Property(e => e.IsActive)
             .IsRequired();
@@ -33,10 +38,10 @@ public class EmployeeConfiguration : IEntityTypeConfiguration<Employee>
         builder.Property(e => e.CreatedAt)
             .IsRequired();
 
-        // Employee 1:1 WhatsAppContact
-        builder.HasOne(e => e.WhatsAppContact)
+        // Employee 1:N WhatsAppContacts
+        builder.HasMany(e => e.WhatsAppContacts)
             .WithOne(w => w.Employee)
-            .HasForeignKey<WhatsAppContact>(w => w.EmployeeId)
+            .HasForeignKey(w => w.EmployeeId)
             .OnDelete(DeleteBehavior.Restrict);
     }
 }

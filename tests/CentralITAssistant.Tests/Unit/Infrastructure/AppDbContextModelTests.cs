@@ -37,7 +37,21 @@ public class AppDbContextModelTests
     }
 
     [Fact]
-    public void Employee_ShouldHaveUniqueCorporateEmail()
+    public void Employee_ShouldHaveUniquePersonalEmail()
+    {
+        using var context = CreateContext();
+
+        var entityType = context.Model.FindEntityType(typeof(Employee))!;
+
+        var index = entityType.GetIndexes()
+            .Single(i => i.Properties.Any(
+                p => p.Name == nameof(Employee.PersonalEmail)));
+
+        Assert.True(index.IsUnique);
+    }
+
+    [Fact]
+    public void Employee_ShouldHaveUniqueFilteredCorporateEmail()
     {
         using var context = CreateContext();
 
@@ -48,38 +62,39 @@ public class AppDbContextModelTests
                 p => p.Name == nameof(Employee.CorporateEmail)));
 
         Assert.True(index.IsUnique);
+        Assert.Equal("[CorporateEmail] IS NOT NULL", index.GetFilter());
     }
 
     [Fact]
-    public void Employee_ShouldHaveRequiredNameAndCorporateEmail()
+    public void Employee_ShouldHaveRequiredNameAndPersonalEmail()
     {
         using var context = CreateContext();
 
         var entityType = context.Model.FindEntityType(typeof(Employee))!;
 
         var fullName = entityType.FindProperty(nameof(Employee.FullName))!;
-        var corporateEmail = entityType.FindProperty(
-            nameof(Employee.CorporateEmail))!;
+        var personalEmail = entityType.FindProperty(
+            nameof(Employee.PersonalEmail))!;
 
         Assert.False(fullName.IsNullable);
         Assert.Equal(150, fullName.GetMaxLength());
 
-        Assert.False(corporateEmail.IsNullable);
-        Assert.Equal(256, corporateEmail.GetMaxLength());
+        Assert.False(personalEmail.IsNullable);
+        Assert.Equal(256, personalEmail.GetMaxLength());
     }
 
     [Fact]
-    public void Employee_PersonalEmail_ShouldBeOptional()
+    public void Employee_CorporateEmail_ShouldBeOptional()
     {
         using var context = CreateContext();
 
         var entityType = context.Model.FindEntityType(typeof(Employee))!;
 
-        var personalEmail = entityType.FindProperty(
-            nameof(Employee.PersonalEmail))!;
+        var corporateEmail = entityType.FindProperty(
+            nameof(Employee.CorporateEmail))!;
 
-        Assert.True(personalEmail.IsNullable);
-        Assert.Equal(256, personalEmail.GetMaxLength());
+        Assert.True(corporateEmail.IsNullable);
+        Assert.Equal(256, corporateEmail.GetMaxLength());
     }
 
     [Fact]
@@ -103,7 +118,7 @@ public class AppDbContextModelTests
     }
 
     [Fact]
-    public void WhatsAppContact_ShouldHaveOptionalOneToOneRelationshipWithEmployee()
+    public void WhatsAppContact_ShouldHaveManyToOneRelationshipWithEmployee()
     {
         using var context = CreateContext();
 
@@ -114,9 +129,41 @@ public class AppDbContextModelTests
             .Single(fk => fk.Properties.Any(
                 p => p.Name == nameof(WhatsAppContact.EmployeeId)));
 
-        Assert.True(foreignKey.IsUnique);
+        Assert.False(foreignKey.IsUnique);
         Assert.False(foreignKey.IsRequired);
-        Assert.Equal(typeof(Employee), foreignKey.PrincipalEntityType.ClrType);
+
+        Assert.Equal(
+            typeof(Employee),
+            foreignKey.PrincipalEntityType.ClrType);
+
+        Assert.Equal(
+            nameof(Employee.WhatsAppContacts),
+            foreignKey.PrincipalToDependent?.Name);
+
+        Assert.Equal(
+            nameof(WhatsAppContact.Employee),
+            foreignKey.DependentToPrincipal?.Name);
+    }
+
+    [Fact]
+    public void WhatsAppContact_ShouldHaveUniqueFilteredIndexForActiveContacts()
+    {
+        using var context = CreateContext();
+
+        var entityType = context.Model.FindEntityType(
+            typeof(WhatsAppContact))!;
+
+        var index = entityType.GetIndexes()
+            .Single(i =>
+                i.IsUnique &&
+                i.Properties.Any(
+                    p => p.Name == nameof(WhatsAppContact.EmployeeId)));
+
+        Assert.True(index.IsUnique);
+
+        Assert.Equal(
+            "[EmployeeId] IS NOT NULL AND [IsActive] = 1",
+            index.GetFilter());
     }
 
     [Fact]

@@ -13,8 +13,8 @@ public interface IEmployeeRepository
         Guid id,
         CancellationToken cancellationToken = default);
 
-    Task<Employee?> GetByCorporateEmailAsync(
-        string corporateEmail,
+    Task<Employee?> GetByPersonalEmailAsync(
+        string personalEmail,
         CancellationToken cancellationToken = default);
 
     Task<IReadOnlyList<Employee>> GetAllAsync(

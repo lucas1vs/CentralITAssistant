@@ -61,7 +61,6 @@ namespace CentralITAssistant.Infrastructure.Persistence.Migrations
                         .HasColumnType("uniqueidentifier");
 
                     b.Property<string>("CorporateEmail")
-                        .IsRequired()
                         .HasMaxLength(256)
                         .HasColumnType("nvarchar(256)");
 
@@ -77,21 +76,76 @@ namespace CentralITAssistant.Infrastructure.Persistence.Migrations
                         .HasColumnType("bit");
 
                     b.Property<string>("PersonalEmail")
+                        .IsRequired()
                         .HasMaxLength(256)
                         .HasColumnType("nvarchar(256)");
 
                     b.HasKey("Id");
 
                     b.HasIndex("CorporateEmail")
+                        .IsUnique()
+                        .HasFilter("[CorporateEmail] IS NOT NULL");
+
+                    b.HasIndex("PersonalEmail")
                         .IsUnique();
 
                     b.ToTable("Employees", (string)null);
                 });
 
+            modelBuilder.Entity("CentralITAssistant.Domain.Entities.PendingEmployeeRegistration", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<string>("CodeHash")
+                        .IsRequired()
+                        .HasMaxLength(128)
+                        .HasColumnType("nvarchar(128)");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<DateTime>("ExpiresAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<int>("FailedAttempts")
+                        .HasColumnType("int");
+
+                    b.Property<string>("FullName")
+                        .IsRequired()
+                        .HasMaxLength(150)
+                        .HasColumnType("nvarchar(150)");
+
+                    b.Property<bool>("IsVerified")
+                        .HasColumnType("bit");
+
+                    b.Property<DateTime>("LastCodeSentAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("PersonalEmail")
+                        .IsRequired()
+                        .HasMaxLength(256)
+                        .HasColumnType("nvarchar(256)");
+
+                    b.Property<string>("PhoneNumber")
+                        .IsRequired()
+                        .HasMaxLength(20)
+                        .HasColumnType("nvarchar(20)");
+
+                    b.Property<int>("ResendCount")
+                        .HasColumnType("int");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("PersonalEmail")
+                        .IsUnique();
+
+                    b.ToTable("PendingEmployeeRegistrations", (string)null);
+                });
+
             modelBuilder.Entity("CentralITAssistant.Domain.Entities.WhatsAppContact", b =>
                 {
                     b.Property<Guid>("Id")
-                        .ValueGeneratedOnAdd()
                         .HasColumnType("uniqueidentifier");
 
                     b.Property<DateTime>("CreatedAt")
@@ -118,7 +172,7 @@ namespace CentralITAssistant.Infrastructure.Persistence.Migrations
 
                     b.HasIndex("EmployeeId")
                         .IsUnique()
-                        .HasFilter("[EmployeeId] IS NOT NULL");
+                        .HasFilter("[EmployeeId] IS NOT NULL AND [IsActive] = 1");
 
                     b.HasIndex("PhoneNumber")
                         .IsUnique();
@@ -147,8 +201,8 @@ namespace CentralITAssistant.Infrastructure.Persistence.Migrations
             modelBuilder.Entity("CentralITAssistant.Domain.Entities.WhatsAppContact", b =>
                 {
                     b.HasOne("CentralITAssistant.Domain.Entities.Employee", "Employee")
-                        .WithOne("WhatsAppContact")
-                        .HasForeignKey("CentralITAssistant.Domain.Entities.WhatsAppContact", "EmployeeId")
+                        .WithMany("WhatsAppContacts")
+                        .HasForeignKey("EmployeeId")
                         .OnDelete(DeleteBehavior.Restrict);
 
                     b.Navigation("Employee");
@@ -158,7 +212,7 @@ namespace CentralITAssistant.Infrastructure.Persistence.Migrations
                 {
                     b.Navigation("Conversations");
 
-                    b.Navigation("WhatsAppContact");
+                    b.Navigation("WhatsAppContacts");
                 });
 
             modelBuilder.Entity("CentralITAssistant.Domain.Entities.WhatsAppContact", b =>

@@ -19,7 +19,8 @@ public class WhatsAppContact
 
     public Employee? Employee { get; private set; }
 
-    public ICollection<Conversation> Conversations { get; private set; } = new List<Conversation>();
+    public ICollection<Conversation> Conversations { get; private set; }
+        = new List<Conversation>();
 
     // Construtor utilizado pelo Entity Framework Core
     private WhatsAppContact()
@@ -42,6 +43,14 @@ public class WhatsAppContact
     {
         ArgumentNullException.ThrowIfNull(employee);
 
+        if (!employee.IsActive)
+            throw new InvalidOperationException(
+                "Não é possível associar um contato a um colaborador inativo.");
+
+        if (!IsActive)
+            throw new InvalidOperationException(
+                "Não é possível associar um contato WhatsApp inativo.");
+
         if (EmployeeId.HasValue && EmployeeId != employee.Id)
             throw new InvalidOperationException(
                 "Este contato já está associado a outro colaborador.");
@@ -57,6 +66,10 @@ public class WhatsAppContact
     // Atualização do número
     public void UpdatePhoneNumber(string phoneNumber)
     {
+        if (!IsActive)
+            throw new InvalidOperationException(
+                "Não é possível alterar o número de um contato inativo.");
+
         string normalizedPhone = NormalizePhoneNumber(phoneNumber);
 
         if (PhoneNumber == normalizedPhone)
@@ -71,6 +84,10 @@ public class WhatsAppContact
     // Verificação após confirmação da identidade
     public void Verify()
     {
+        if (!IsActive)
+            throw new InvalidOperationException(
+                "Não é possível verificar um contato inativo.");
+
         IsVerified = true;
         VerifiedAt = DateTime.UtcNow;
     }
@@ -82,7 +99,25 @@ public class WhatsAppContact
 
     public void Activate()
     {
+        if (Employee is not null)
+        {
+            if (!Employee.IsActive)
+                throw new InvalidOperationException(
+                    "Não é possível ativar um contato de um colaborador inativo.");
+
+            if (Employee.WhatsAppContacts.Any(c =>
+                c.IsActive && !ReferenceEquals(c, this)))
+            {
+                throw new InvalidOperationException(
+                    "O colaborador já possui outro contato WhatsApp ativo.");
+            }
+        }
+
         IsActive = true;
+
+        // A reativação exige uma nova verificação do número.
+        IsVerified = false;
+        VerifiedAt = null;
     }
 
     private void SetPhoneNumber(string phoneNumber)

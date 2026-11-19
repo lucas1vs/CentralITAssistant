@@ -16,7 +16,7 @@ public class EmployeeRepositoryTests
 
         var employee = new Employee(
             "Lucas Domingos",
-            "lucas@centralit.com");
+            "lucas@gmail.com");
 
         await repository.AddAsync(employee);
 
@@ -49,7 +49,7 @@ public class EmployeeRepositoryTests
 
         var employee = new Employee(
             "Lucas Domingos",
-            "lucas@centralit.com");
+            "lucas@gmail.com");
 
         database.Context.Employees.Add(employee);
         await database.Context.SaveChangesAsync();
@@ -74,7 +74,7 @@ public class EmployeeRepositoryTests
     }
 
     [Fact]
-    public async Task GetByCorporateEmailAsync_ShouldReturnEmployee()
+    public async Task GetByPersonalEmailAsync_ShouldReturnEmployee()
     {
         await using var database =
             await SqliteTestDatabase.CreateAsync();
@@ -83,30 +83,42 @@ public class EmployeeRepositoryTests
 
         var employee = new Employee(
             "Lucas Domingos",
-            "lucas@centralit.com");
+            "lucas@gmail.com");
 
         database.Context.Employees.Add(employee);
         await database.Context.SaveChangesAsync();
 
-        var result = await repository.GetByCorporateEmailAsync(
-            "LUCAS@CENTRALIT.COM");
+        var result = await repository.GetByPersonalEmailAsync(
+            "LUCAS@GMAIL.COM");
 
         Assert.NotNull(result);
         Assert.Equal(employee.Id, result.Id);
     }
 
     [Fact]
-    public async Task GetByCorporateEmailAsync_ShouldReturnNull_WhenNotFound()
+    public async Task GetByPersonalEmailAsync_ShouldReturnNull_WhenNotFound()
     {
         await using var database =
             await SqliteTestDatabase.CreateAsync();
 
         var repository = new EmployeeRepository(database.Context);
 
-        var result = await repository.GetByCorporateEmailAsync(
-            "inexistente@centralit.com");
+        var result = await repository.GetByPersonalEmailAsync(
+            "inexistente@gmail.com");
 
         Assert.Null(result);
+    }
+
+    [Fact]
+    public async Task GetByPersonalEmailAsync_ShouldThrow_WhenEmailIsEmpty()
+    {
+        await using var database =
+            await SqliteTestDatabase.CreateAsync();
+
+        var repository = new EmployeeRepository(database.Context);
+
+        await Assert.ThrowsAsync<ArgumentException>(
+            () => repository.GetByPersonalEmailAsync(" "));
     }
 
     [Fact]
@@ -119,15 +131,15 @@ public class EmployeeRepositoryTests
 
         var employee1 = new Employee(
             "Lucas Domingos",
-            "lucas@centralit.com");
+            "lucas@gmail.com");
 
         var employee2 = new Employee(
             "Ana Silva",
-            "ana@centralit.com");
+            "ana@gmail.com");
 
         var employee3 = new Employee(
             "Carlos Souza",
-            "carlos@centralit.com");
+            "carlos@gmail.com");
 
         database.Context.Employees.AddRange(
             employee1,
@@ -155,7 +167,7 @@ public class EmployeeRepositoryTests
 
         var employee = new Employee(
             "Lucas Domingos",
-            "lucas@centralit.com");
+            "lucas@gmail.com");
 
         await repository.AddAsync(employee);
         await repository.SaveChangesAsync();
@@ -164,6 +176,6 @@ public class EmployeeRepositoryTests
             .FindAsync(employee.Id);
 
         Assert.NotNull(result);
-        Assert.Equal(employee.CorporateEmail, result.CorporateEmail);
+        Assert.Equal(employee.PersonalEmail, result.PersonalEmail);
     }
 }

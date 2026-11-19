@@ -36,17 +36,17 @@ public class EmployeeRepository : IEmployeeRepository
                 cancellationToken);
     }
 
-    public async Task<Employee?> GetByCorporateEmailAsync(
-        string corporateEmail,
+    public async Task<Employee?> GetByPersonalEmailAsync(
+        string personalEmail,
         CancellationToken cancellationToken = default)
     {
-        ArgumentException.ThrowIfNullOrWhiteSpace(corporateEmail);
+        ArgumentException.ThrowIfNullOrWhiteSpace(personalEmail);
 
-        var normalizedEmail = corporateEmail.Trim().ToLowerInvariant();
+        var normalizedEmail = personalEmail.Trim().ToLowerInvariant();
 
         return await _context.Employees
             .FirstOrDefaultAsync(
-                e => e.CorporateEmail == normalizedEmail,
+                e => e.PersonalEmail == normalizedEmail,
                 cancellationToken);
     }
 

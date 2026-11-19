@@ -1,3 +1,4 @@
+
 using CentralITAssistant.Domain.Entities;
 using Microsoft.EntityFrameworkCore;
 
@@ -11,6 +12,9 @@ public class AppDbContext : DbContext
     }
 
     public DbSet<Employee> Employees => Set<Employee>();
+
+    public DbSet<PendingEmployeeRegistration> PendingEmployeeRegistrations =>
+        Set<PendingEmployeeRegistration>();
 
     public DbSet<WhatsAppContact> WhatsAppContacts =>
         Set<WhatsAppContact>();

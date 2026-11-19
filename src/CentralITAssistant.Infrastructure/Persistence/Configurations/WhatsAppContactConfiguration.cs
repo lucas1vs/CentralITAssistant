@@ -18,6 +18,7 @@ public class WhatsAppContactConfiguration
             .IsRequired()
             .HasMaxLength(20);
 
+        // Um número não pode pertencer a dois registros.
         builder.HasIndex(w => w.PhoneNumber)
             .IsUnique();
 
@@ -32,7 +33,21 @@ public class WhatsAppContactConfiguration
         builder.Property(w => w.CreatedAt)
             .IsRequired();
 
-        // EmployeeId é opcional.
-        // O relacionamento 1:1 é configurado em EmployeeConfiguration.
+        // Cada contato pertence a, no máximo, um funcionário.
+        builder.HasOne(w => w.Employee)
+            .WithMany(e => e.WhatsAppContacts)
+            .HasForeignKey(w => w.EmployeeId)
+            .IsRequired(false)
+            .OnDelete(DeleteBehavior.Restrict);
+
+        // Um funcionário pode ter apenas um contato ativo.
+        builder.HasIndex(w => w.EmployeeId)
+            .IsUnique()
+            .HasFilter("[EmployeeId] IS NOT NULL AND [IsActive] = 1");
+
+        builder.HasKey(w => w.Id);
+
+        builder.Property(w => w.Id)
+            .ValueGeneratedNever();
     }
 }
