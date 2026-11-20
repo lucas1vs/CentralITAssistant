@@ -55,6 +55,7 @@ builder.Services.AddScoped<IEmailService>(
 // Use Cases
 builder.Services.AddScoped<RegisterEmployeeUseCase>();
 builder.Services.AddScoped<VerifyEmployeeEmailUseCase>();
+builder.Services.AddScoped<ResendEmployeeVerificationCodeUseCase>();
 
 var app = builder.Build();
 
