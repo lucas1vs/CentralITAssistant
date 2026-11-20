@@ -1,11 +1,12 @@
-
 using CentralITAssistant.Application.Abstractions.Persistence;
 using CentralITAssistant.Application.Abstractions.Services;
 using CentralITAssistant.Application.UseCases.Employees;
+using CentralITAssistant.Application.UseCases.WhatsApp;
 using CentralITAssistant.Infrastructure.Persistence.Context;
 using CentralITAssistant.Infrastructure.Persistence.Repositories;
 using CentralITAssistant.Infrastructure.Services.Email;
 using CentralITAssistant.Infrastructure.Services.Security;
+using CentralITAssistant.Infrastructure.Services.WhatsAppApp;
 using Microsoft.EntityFrameworkCore;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -32,6 +33,14 @@ builder.Services.AddScoped<
     IPendingEmployeeRegistrationRepository,
     PendingEmployeeRegistrationRepository>();
 
+builder.Services.AddScoped<
+    IPendingWhatsAppVerificationRepository,
+    PendingWhatsAppVerificationRepository>();
+
+builder.Services.AddScoped<
+    IWhatsAppContactRepository,
+    WhatsAppContactRepository>();
+
 // Verification Code Service
 var verificationSecret = builder.Configuration["Security:VerificationCodeSecret"]
     ?? throw new InvalidOperationException(
@@ -52,10 +61,18 @@ var gmailAppPassword = builder.Configuration["Email:GmailAppPassword"]
 builder.Services.AddScoped<IEmailService>(
     _ => new GmailEmailService(gmailAddress, gmailAppPassword));
 
-// Use Cases
+// WhatsApp Service
+builder.Services.AddScoped<IWhatsAppService, WhatsAppService>();
+
+// Employee Use Cases
 builder.Services.AddScoped<RegisterEmployeeUseCase>();
 builder.Services.AddScoped<VerifyEmployeeEmailUseCase>();
 builder.Services.AddScoped<ResendEmployeeVerificationCodeUseCase>();
+
+// WhatsApp Use Cases
+builder.Services.AddScoped<RequestWhatsAppVerificationUseCase>();
+builder.Services.AddScoped<VerifyWhatsAppNumberUseCase>();
+builder.Services.AddScoped<ResendWhatsAppVerificationCodeUseCase>();
 
 var app = builder.Build();
 
