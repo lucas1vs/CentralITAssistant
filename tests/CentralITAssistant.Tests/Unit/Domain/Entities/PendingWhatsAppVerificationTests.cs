@@ -21,10 +21,8 @@ public class PendingWhatsAppVerificationTests
     [Fact]
     public void Constructor_WithValidData_ShouldCreateVerification()
     {
-        // Arrange
         var employeeId = Guid.NewGuid();
 
-        // Act
         var verification = new PendingWhatsAppVerification(
             employeeId,
             "+5561999999999",
@@ -32,7 +30,6 @@ public class PendingWhatsAppVerificationTests
             SentAt.AddMinutes(5),
             SentAt);
 
-        // Assert
         Assert.NotEqual(Guid.Empty, verification.Id);
         Assert.Equal(employeeId, verification.EmployeeId);
         Assert.Equal("+5561999999999", verification.PhoneNumber);
@@ -107,9 +104,7 @@ public class PendingWhatsAppVerificationTests
     {
         var verification = CreateValidVerification();
 
-        var result = verification.IsExpired(SentAt.AddMinutes(4));
-
-        Assert.False(result);
+        Assert.False(verification.IsExpired(SentAt.AddMinutes(4)));
     }
 
     [Fact]
@@ -117,9 +112,7 @@ public class PendingWhatsAppVerificationTests
     {
         var verification = CreateValidVerification();
 
-        var result = verification.IsExpired(SentAt.AddMinutes(5));
-
-        Assert.True(result);
+        Assert.True(verification.IsExpired(SentAt.AddMinutes(5)));
     }
 
     [Fact]
@@ -127,10 +120,8 @@ public class PendingWhatsAppVerificationTests
     {
         var verification = CreateValidVerification();
 
-        var result = verification.CanAttemptVerification(
-            SentAt.AddMinutes(1));
-
-        Assert.True(result);
+        Assert.True(
+            verification.CanAttemptVerification(SentAt.AddMinutes(1)));
     }
 
     [Fact]
@@ -138,10 +129,8 @@ public class PendingWhatsAppVerificationTests
     {
         var verification = CreateValidVerification();
 
-        var result = verification.CanAttemptVerification(
-            SentAt.AddMinutes(5));
-
-        Assert.False(result);
+        Assert.False(
+            verification.CanAttemptVerification(SentAt.AddMinutes(5)));
     }
 
     [Fact]
@@ -200,10 +189,8 @@ public class PendingWhatsAppVerificationTests
     {
         var verification = CreateValidVerification();
 
-        var result = verification.CanResendCode(
-            SentAt.AddSeconds(30));
-
-        Assert.False(result);
+        Assert.False(
+            verification.CanResendCode(SentAt.AddSeconds(30)));
     }
 
     [Fact]
@@ -211,10 +198,8 @@ public class PendingWhatsAppVerificationTests
     {
         var verification = CreateValidVerification();
 
-        var result = verification.CanResendCode(
-            SentAt.AddSeconds(60));
-
-        Assert.True(result);
+        Assert.True(
+            verification.CanResendCode(SentAt.AddSeconds(60)));
     }
 
     [Fact]
@@ -232,11 +217,44 @@ public class PendingWhatsAppVerificationTests
             newSentAt.AddMinutes(5),
             newSentAt);
 
+        Assert.Equal("+5561999999999", verification.PhoneNumber);
         Assert.Equal("novo-hash", verification.CodeHash);
         Assert.Equal(newSentAt, verification.LastCodeSentAt);
         Assert.Equal(newSentAt.AddMinutes(5), verification.ExpiresAt);
         Assert.Equal(1, verification.ResendCount);
         Assert.Equal(0, verification.FailedAttempts);
+    }
+
+    [Fact]
+    public void RenewVerification_ShouldKeepPhoneNumberUnchanged()
+    {
+        var verification = CreateValidVerification();
+        var originalPhoneNumber = verification.PhoneNumber;
+        var newSentAt = SentAt.AddSeconds(60);
+
+        verification.RenewVerification(
+            "novo-hash",
+            newSentAt.AddMinutes(5),
+            newSentAt);
+
+        Assert.Equal(originalPhoneNumber, verification.PhoneNumber);
+    }
+
+    [Theory]
+    [InlineData(null)]
+    [InlineData("")]
+    [InlineData(" ")]
+    public void RenewVerification_WithInvalidCodeHash_ShouldThrowException(
+        string? codeHash)
+    {
+        var verification = CreateValidVerification();
+        var newSentAt = SentAt.AddSeconds(60);
+
+        Assert.Throws<ArgumentException>(() =>
+            verification.RenewVerification(
+                codeHash!,
+                newSentAt.AddMinutes(5),
+                newSentAt));
     }
 
     [Fact]

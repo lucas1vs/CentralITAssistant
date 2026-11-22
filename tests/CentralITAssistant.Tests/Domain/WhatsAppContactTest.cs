@@ -15,7 +15,7 @@ public class WhatsAppContactTests
         Assert.False(contact.IsVerified);
         Assert.Null(contact.VerifiedAt);
         Assert.True(contact.IsActive);
-        Assert.NotNull(contact.CreatedAt);
+        Assert.NotEqual(default(DateTime), contact.CreatedAt);
     }
 
     [Fact]
