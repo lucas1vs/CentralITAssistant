@@ -143,6 +143,54 @@ namespace CentralITAssistant.Infrastructure.Persistence.Migrations
                     b.ToTable("PendingEmployeeRegistrations", (string)null);
                 });
 
+            modelBuilder.Entity("CentralITAssistant.Domain.Entities.PendingWhatsAppVerification", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<string>("CodeHash")
+                        .IsRequired()
+                        .HasMaxLength(128)
+                        .HasColumnType("nvarchar(128)");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<Guid>("EmployeeId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<DateTime>("ExpiresAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<int>("FailedAttempts")
+                        .HasColumnType("int");
+
+                    b.Property<bool>("IsCancelled")
+                        .HasColumnType("bit");
+
+                    b.Property<bool>("IsVerified")
+                        .HasColumnType("bit");
+
+                    b.Property<DateTime>("LastCodeSentAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("PhoneNumber")
+                        .IsRequired()
+                        .HasMaxLength(20)
+                        .HasColumnType("nvarchar(20)");
+
+                    b.Property<int>("ResendCount")
+                        .HasColumnType("int");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("EmployeeId");
+
+                    b.HasIndex("PhoneNumber");
+
+                    b.ToTable("PendingWhatsAppVerifications", (string)null);
+                });
+
             modelBuilder.Entity("CentralITAssistant.Domain.Entities.WhatsAppContact", b =>
                 {
                     b.Property<Guid>("Id")
@@ -196,6 +244,15 @@ namespace CentralITAssistant.Infrastructure.Persistence.Migrations
                     b.Navigation("Employee");
 
                     b.Navigation("WhatsAppContact");
+                });
+
+            modelBuilder.Entity("CentralITAssistant.Domain.Entities.PendingWhatsAppVerification", b =>
+                {
+                    b.HasOne("CentralITAssistant.Domain.Entities.Employee", null)
+                        .WithMany()
+                        .HasForeignKey("EmployeeId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
                 });
 
             modelBuilder.Entity("CentralITAssistant.Domain.Entities.WhatsAppContact", b =>
