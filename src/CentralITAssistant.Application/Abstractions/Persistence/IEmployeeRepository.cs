@@ -13,6 +13,10 @@ public interface IEmployeeRepository
         Guid id,
         CancellationToken cancellationToken = default);
 
+    Task<Employee?> GetByIdWithWhatsAppContactsAsync(
+        Guid id,
+        CancellationToken cancellationToken = default);
+
     Task<Employee?> GetByPersonalEmailAsync(
         string personalEmail,
         CancellationToken cancellationToken = default);

@@ -62,8 +62,9 @@ public class VerifyWhatsAppNumberUseCase
                 "Código de verificação inválido.");
         }
 
-        var employee = await _employeeRepository.GetByIdAsync(
-            verification.EmployeeId);
+        var employee =
+            await _employeeRepository.GetByIdWithWhatsAppContactsAsync(
+                verification.EmployeeId);
 
         if (employee is null)
             throw new KeyNotFoundException(

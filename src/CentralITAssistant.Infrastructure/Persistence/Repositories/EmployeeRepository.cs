@@ -36,6 +36,17 @@ public class EmployeeRepository : IEmployeeRepository
                 cancellationToken);
     }
 
+    public async Task<Employee?> GetByIdWithWhatsAppContactsAsync(
+        Guid id,
+        CancellationToken cancellationToken = default)
+    {
+        return await _context.Employees
+            .Include(e => e.WhatsAppContacts)
+            .FirstOrDefaultAsync(
+                e => e.Id == id,
+                cancellationToken);
+    }
+
     public async Task<Employee?> GetByPersonalEmailAsync(
         string personalEmail,
         CancellationToken cancellationToken = default)

@@ -1,3 +1,4 @@
+
 using CentralITAssistant.Application.Abstractions.Persistence;
 using CentralITAssistant.Application.Abstractions.Services;
 using CentralITAssistant.Application.UseCases.WhatsApp;
@@ -59,9 +60,7 @@ public class VerifyWhatsAppNumberUseCaseTests
     [Fact]
     public async Task ExecuteAsync_WhenFirstNumberIsVerified_ShouldVerifyExistingContact()
     {
-        // Arrange
         var employee = CreateEmployee("+5561999999999");
-
         var verification = CreateVerification(employee.Id);
 
         var employeeRepository = new FakeEmployeeRepository(employee);
@@ -72,12 +71,10 @@ public class VerifyWhatsAppNumberUseCaseTests
             employeeRepository,
             verificationRepository);
 
-        // Act
         var result = await useCase.ExecuteAsync(
             verification.Id,
             ValidCode);
 
-        // Assert
         var contact = Assert.Single(employee.WhatsAppContacts);
 
         Assert.Equal(employee.Id, result);
@@ -90,13 +87,11 @@ public class VerifyWhatsAppNumberUseCaseTests
     [Fact]
     public async Task ExecuteAsync_WhenChangingNumber_ShouldReplaceOldContact()
     {
-        // Arrange
         var employee = CreateEmployee(
             "+5561988888888",
             verified: true);
 
         var oldContact = Assert.Single(employee.WhatsAppContacts);
-
         var newPhoneNumber = "+5561999999999";
 
         var verification = CreateVerification(
@@ -111,12 +106,10 @@ public class VerifyWhatsAppNumberUseCaseTests
             employeeRepository,
             verificationRepository);
 
-        // Act
         var result = await useCase.ExecuteAsync(
             verification.Id,
             ValidCode);
 
-        // Assert
         Assert.Equal(employee.Id, result);
         Assert.False(oldContact.IsActive);
 
@@ -136,7 +129,6 @@ public class VerifyWhatsAppNumberUseCaseTests
     [Fact]
     public async Task ExecuteAsync_WhenEmployeeHasNoContact_ShouldCreateAndAssociateContact()
     {
-        // Arrange
         var employee = new Employee(
             "Funcionário Teste",
             "funcionario@email.com");
@@ -151,10 +143,8 @@ public class VerifyWhatsAppNumberUseCaseTests
             employeeRepository,
             verificationRepository);
 
-        // Act
         await useCase.ExecuteAsync(verification.Id, ValidCode);
 
-        // Assert
         var contact = Assert.Single(employee.WhatsAppContacts);
 
         Assert.Equal(verification.PhoneNumber, contact.PhoneNumber);
@@ -166,7 +156,6 @@ public class VerifyWhatsAppNumberUseCaseTests
     [Fact]
     public async Task ExecuteAsync_WhenCodeIsInvalid_ShouldRegisterFailedAttempt()
     {
-        // Arrange
         var employee = CreateEmployee();
         var verification = CreateVerification(employee.Id);
 
@@ -178,13 +167,11 @@ public class VerifyWhatsAppNumberUseCaseTests
             employeeRepository,
             verificationRepository);
 
-        // Act
         var exception = await Assert.ThrowsAsync<InvalidOperationException>(
             () => useCase.ExecuteAsync(
                 verification.Id,
                 "000000"));
 
-        // Assert
         Assert.Equal("Código de verificação inválido.", exception.Message);
         Assert.Equal(1, verification.FailedAttempts);
         Assert.False(verification.IsVerified);
@@ -194,7 +181,6 @@ public class VerifyWhatsAppNumberUseCaseTests
     [Fact]
     public async Task ExecuteAsync_WhenVerificationDoesNotExist_ShouldThrowException()
     {
-        // Arrange
         var employeeRepository = new FakeEmployeeRepository();
         var verificationRepository =
             new FakePendingWhatsAppVerificationRepository();
@@ -203,11 +189,9 @@ public class VerifyWhatsAppNumberUseCaseTests
             employeeRepository,
             verificationRepository);
 
-        // Act
         var exception = await Assert.ThrowsAsync<KeyNotFoundException>(
             () => useCase.ExecuteAsync(Guid.NewGuid(), ValidCode));
 
-        // Assert
         Assert.Equal("Verificação não encontrada.", exception.Message);
         Assert.Equal(0, verificationRepository.SaveChangesCount);
     }
@@ -215,7 +199,6 @@ public class VerifyWhatsAppNumberUseCaseTests
     [Fact]
     public async Task ExecuteAsync_WhenEmployeeDoesNotExist_ShouldThrowException()
     {
-        // Arrange
         var employeeId = Guid.NewGuid();
         var verification = CreateVerification(employeeId);
 
@@ -227,13 +210,11 @@ public class VerifyWhatsAppNumberUseCaseTests
             employeeRepository,
             verificationRepository);
 
-        // Act
         var exception = await Assert.ThrowsAsync<KeyNotFoundException>(
             () => useCase.ExecuteAsync(
                 verification.Id,
                 ValidCode));
 
-        // Assert
         Assert.Equal("Funcionário não encontrado.", exception.Message);
         Assert.False(verification.IsVerified);
     }
@@ -241,7 +222,6 @@ public class VerifyWhatsAppNumberUseCaseTests
     [Fact]
     public async Task ExecuteAsync_WhenEmployeeIsInactive_ShouldThrowException()
     {
-        // Arrange
         var employee = CreateEmployee();
         employee.Deactivate();
 
@@ -255,13 +235,11 @@ public class VerifyWhatsAppNumberUseCaseTests
             employeeRepository,
             verificationRepository);
 
-        // Act
         var exception = await Assert.ThrowsAsync<InvalidOperationException>(
             () => useCase.ExecuteAsync(
                 verification.Id,
                 ValidCode));
 
-        // Assert
         Assert.Equal(
             "Funcionário inativo não pode verificar um número.",
             exception.Message);
@@ -272,7 +250,6 @@ public class VerifyWhatsAppNumberUseCaseTests
     [Fact]
     public async Task ExecuteAsync_WhenVerificationIsExpired_ShouldThrowException()
     {
-        // Arrange
         var employee = CreateEmployee();
 
         var verification = CreateVerification(
@@ -288,23 +265,24 @@ public class VerifyWhatsAppNumberUseCaseTests
             employeeRepository,
             verificationRepository);
 
-        // Act
         var exception = await Assert.ThrowsAsync<InvalidOperationException>(
             () => useCase.ExecuteAsync(
                 verification.Id,
                 ValidCode));
 
-        // Assert
         Assert.Contains("expirou", exception.Message);
         Assert.False(verification.IsVerified);
         Assert.Equal(0, verificationRepository.SaveChangesCount);
     }
 
     [Fact]
+
+   
     public async Task ExecuteAsync_WhenMaximumAttemptsReached_ShouldThrowException()
     {
-        // Arrange
         var employee = CreateEmployee();
+        var oldContact = Assert.Single(employee.WhatsAppContacts);
+
         var verification = CreateVerification(employee.Id);
 
         for (var i = 0; i < PendingWhatsAppVerification.MaxFailedAttempts; i++)
@@ -313,6 +291,7 @@ public class VerifyWhatsAppNumberUseCaseTests
         }
 
         var employeeRepository = new FakeEmployeeRepository(employee);
+
         var verificationRepository =
             new FakePendingWhatsAppVerificationRepository(verification);
 
@@ -320,22 +299,29 @@ public class VerifyWhatsAppNumberUseCaseTests
             employeeRepository,
             verificationRepository);
 
-        // Act
         var exception = await Assert.ThrowsAsync<InvalidOperationException>(
             () => useCase.ExecuteAsync(
                 verification.Id,
                 ValidCode));
 
-        // Assert
         Assert.Contains("limite de tentativas", exception.Message);
-        Assert.Equal(5, verification.FailedAttempts);
+
+        Assert.Equal(
+            PendingWhatsAppVerification.MaxFailedAttempts,
+            verification.FailedAttempts);
+
         Assert.False(verification.IsVerified);
+
+        Assert.Equal(0, verificationRepository.SaveChangesCount);
+
+        Assert.True(oldContact.IsActive);
     }
+    
+
 
     [Fact]
     public async Task ExecuteAsync_WhenVerificationIsCancelled_ShouldThrowException()
     {
-        // Arrange
         var employee = CreateEmployee();
         var verification = CreateVerification(employee.Id);
 
@@ -349,13 +335,11 @@ public class VerifyWhatsAppNumberUseCaseTests
             employeeRepository,
             verificationRepository);
 
-        // Act
         var exception = await Assert.ThrowsAsync<InvalidOperationException>(
             () => useCase.ExecuteAsync(
                 verification.Id,
                 ValidCode));
 
-        // Assert
         Assert.Contains("cancelada", exception.Message);
         Assert.False(verification.IsVerified);
     }
@@ -363,7 +347,6 @@ public class VerifyWhatsAppNumberUseCaseTests
     [Fact]
     public async Task ExecuteAsync_WhenVerificationIsAlreadyCompleted_ShouldThrowException()
     {
-        // Arrange
         var employee = CreateEmployee();
         var verification = CreateVerification(employee.Id);
 
@@ -377,29 +360,24 @@ public class VerifyWhatsAppNumberUseCaseTests
             employeeRepository,
             verificationRepository);
 
-        // Act
         var exception = await Assert.ThrowsAsync<InvalidOperationException>(
             () => useCase.ExecuteAsync(
                 verification.Id,
                 ValidCode));
 
-        // Assert
         Assert.Contains("expirou, foi cancelada ou atingiu", exception.Message);
     }
 
     [Fact]
     public async Task ExecuteAsync_WhenVerificationIdIsEmpty_ShouldThrowException()
     {
-        // Arrange
         var useCase = CreateUseCase(
             new FakeEmployeeRepository(),
             new FakePendingWhatsAppVerificationRepository());
 
-        // Act
         var exception = await Assert.ThrowsAsync<ArgumentException>(
             () => useCase.ExecuteAsync(Guid.Empty, ValidCode));
 
-        // Assert
         Assert.Equal("verificationId", exception.ParamName);
     }
 
@@ -410,18 +388,53 @@ public class VerifyWhatsAppNumberUseCaseTests
     public async Task ExecuteAsync_WhenCodeIsEmpty_ShouldThrowException(
         string? code)
     {
-        // Arrange
         var useCase = CreateUseCase(
             new FakeEmployeeRepository(),
             new FakePendingWhatsAppVerificationRepository());
 
-        // Act
         var exception = await Assert.ThrowsAsync<ArgumentException>(
             () => useCase.ExecuteAsync(Guid.NewGuid(), code!));
 
-        // Assert
         Assert.Equal("code", exception.ParamName);
     }
+
+
+    [Fact]
+    public async Task ExecuteAsync_WhenCodeIsInvalid_ShouldNotChangeExistingContact()
+    {
+        var employee = CreateEmployee(
+            "+5561988888888",
+            verified: true);
+
+        var oldContact = Assert.Single(employee.WhatsAppContacts);
+
+        var verification = CreateVerification(
+            employee.Id,
+            "+5561999999999");
+
+        var employeeRepository = new FakeEmployeeRepository(employee);
+
+        var verificationRepository =
+            new FakePendingWhatsAppVerificationRepository(verification);
+
+        var useCase = CreateUseCase(
+            employeeRepository,
+            verificationRepository);
+
+        await Assert.ThrowsAsync<InvalidOperationException>(
+            () => useCase.ExecuteAsync(
+                verification.Id,
+                "000000"));
+
+        Assert.True(oldContact.IsActive);
+        Assert.True(oldContact.IsVerified);
+
+        Assert.Single(employee.WhatsAppContacts);
+
+        Assert.False(verification.IsVerified);
+        Assert.Equal(1, verification.FailedAttempts);
+    }
+
 
     // Fakes
 
@@ -436,6 +449,14 @@ public class VerifyWhatsAppNumberUseCaseTests
         }
 
         public Task<Employee?> GetByIdAsync(
+            Guid id,
+            CancellationToken cancellationToken = default)
+        {
+            _employees.TryGetValue(id, out var employee);
+            return Task.FromResult(employee);
+        }
+
+        public Task<Employee?> GetByIdWithWhatsAppContactsAsync(
             Guid id,
             CancellationToken cancellationToken = default)
         {

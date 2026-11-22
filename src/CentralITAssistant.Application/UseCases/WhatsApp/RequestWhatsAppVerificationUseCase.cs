@@ -41,7 +41,9 @@ public class RequestWhatsAppVerificationUseCase
                 "O número de WhatsApp é obrigatório.",
                 nameof(phoneNumber));
 
-        var employee = await _employeeRepository.GetByIdAsync(employeeId);
+        var employee =
+            await _employeeRepository.GetByIdWithWhatsAppContactsAsync(
+                employeeId);
 
         if (employee is null)
             throw new KeyNotFoundException(
@@ -74,32 +76,79 @@ public class RequestWhatsAppVerificationUseCase
             throw new InvalidOperationException(
                 "Não foi possível utilizar o número informado.");
 
+        var now = DateTime.UtcNow;
+
         var existingVerification =
             await _verificationRepository.GetActiveByEmployeeIdAsync(
                 employeeId);
 
         if (existingVerification is not null)
-            existingVerification.Cancel();
+        {
+            if (!existingVerification.CanResendCode(now))
+            {
+                if (existingVerification.ResendCount >=
+                    PendingWhatsAppVerification.MaxResends)
+                {
+                    throw new InvalidOperationException(
+                        "Limite de reenvios atingido.");
+                }
+
+                var remainingSeconds = Math.Ceiling(
+                    existingVerification
+                        .GetResendCooldown(now)
+                        .TotalSeconds);
+
+                throw new InvalidOperationException(
+                    $"Aguarde {remainingSeconds} segundos antes de solicitar outro código.");
+            }
+        }
 
         var code = _verificationCodeService.GenerateCode();
         var codeHash = _verificationCodeService.HashCode(code);
 
-        var now = DateTime.UtcNow;
+        Guid verificationId;
 
-        var verification = new PendingWhatsAppVerification(
-            employeeId,
-            normalizedPhoneNumber,
-            codeHash,
-            now.AddMinutes(5),
-            now);
+        if (existingVerification is not null &&
+            existingVerification.PhoneNumber == normalizedPhoneNumber)
+        {
+            existingVerification.RenewVerification(
+                codeHash,
+                now.AddMinutes(5),
+                now);
 
-        await _verificationRepository.AddAsync(verification);
-        await _verificationRepository.SaveChangesAsync();
+            await _verificationRepository.SaveChangesAsync();
+
+            verificationId = existingVerification.Id;
+        }
+        else
+        {
+            var resendCount = 0;
+
+            if (existingVerification is not null)
+            {
+                resendCount = existingVerification.ResendCount + 1;
+
+                existingVerification.Cancel();
+            }
+
+            var verification = new PendingWhatsAppVerification(
+                employeeId,
+                normalizedPhoneNumber,
+                codeHash,
+                now.AddMinutes(5),
+                now,
+                resendCount);
+
+            await _verificationRepository.AddAsync(verification);
+            await _verificationRepository.SaveChangesAsync();
+
+            verificationId = verification.Id;
+        }
 
         await _whatsAppService.SendVerificationCodeAsync(
             normalizedPhoneNumber,
             code);
 
-        return verification.Id;
+        return verificationId;
     }
 }

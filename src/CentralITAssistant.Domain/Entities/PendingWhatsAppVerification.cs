@@ -29,22 +29,33 @@ public class PendingWhatsAppVerification
         string phoneNumber,
         string codeHash,
         DateTime expiresAt,
-        DateTime sentAt)
+        DateTime sentAt,
+        int resendCount = 0)
     {
         if (employeeId == Guid.Empty)
-            throw new ArgumentException("O funcionário é obrigatório.", nameof(employeeId));
+            throw new ArgumentException(
+                "O funcionário é obrigatório.",
+                nameof(employeeId));
 
+        if (expiresAt <= sentAt)
+            throw new ArgumentException(
+                "A expiração deve ser posterior ao envio.");
+
+        if (resendCount < 0 || resendCount > MaxResends)
+            throw new ArgumentOutOfRangeException(
+                nameof(resendCount),
+                "O contador de reenvios está fora do limite permitido.");
+
+        Id = Guid.NewGuid();
         EmployeeId = employeeId;
+
         SetPhoneNumber(phoneNumber);
         SetCodeHash(codeHash);
 
-        if (expiresAt <= sentAt)
-            throw new ArgumentException("A expiração deve ser posterior ao envio.");
-
-        Id = Guid.NewGuid();
         CreatedAt = sentAt;
         LastCodeSentAt = sentAt;
         ExpiresAt = expiresAt;
+        ResendCount = resendCount;
     }
 
     public bool IsExpired(DateTime now)
@@ -64,7 +75,9 @@ public class PendingWhatsAppVerification
 
     public TimeSpan GetResendCooldown(DateTime now)
     {
-        var nextAllowedAt = LastCodeSentAt.AddSeconds(ResendIntervalSeconds);
+        var nextAllowedAt = LastCodeSentAt.AddSeconds(
+            ResendIntervalSeconds);
+
         var remaining = nextAllowedAt - now;
 
         return remaining > TimeSpan.Zero
@@ -97,6 +110,7 @@ public class PendingWhatsAppVerification
 
         ExpiresAt = expiresAt;
         LastCodeSentAt = sentAt;
+
         ResendCount++;
         FailedAttempts = 0;
     }

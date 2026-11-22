@@ -26,16 +26,13 @@ public class RegisterEmployeeUseCaseTests
     [Fact]
     public async Task ExecuteAsync_WhenRegistrationIsNew_ShouldCreatePendingRegistrationAndSendEmail()
     {
-        // Arrange
         var useCase = CreateUseCase();
 
-        // Act
         var registrationId = await useCase.ExecuteAsync(
             "Lucas Domingos",
             "  LUCAS@EMAIL.COM  ",
             "61999999999");
 
-        // Assert
         var registration = _pendingRepository.Registration;
 
         Assert.NotNull(registration);
@@ -59,20 +56,17 @@ public class RegisterEmployeeUseCaseTests
     [Fact]
     public async Task ExecuteAsync_WhenEmployeeAlreadyExists_ShouldThrowException()
     {
-        // Arrange
         _employeeRepository.AddEmployee(
             new Employee("Lucas Domingos", "lucas@email.com"));
 
         var useCase = CreateUseCase();
 
-        // Act
         var exception = await Assert.ThrowsAsync<InvalidOperationException>(
             () => useCase.ExecuteAsync(
                 "Lucas Domingos",
                 "lucas@email.com",
                 "61999999999"));
 
-        // Assert
         Assert.Equal(
             "Já existe um funcionário cadastrado com este e-mail.",
             exception.Message);
@@ -85,7 +79,6 @@ public class RegisterEmployeeUseCaseTests
     [Fact]
     public async Task ExecuteAsync_WhenPendingRegistrationExists_ShouldRenewVerification()
     {
-        // Arrange
         var existingRegistration = CreateExistingRegistration();
 
         SetPrivateProperty(
@@ -103,13 +96,11 @@ public class RegisterEmployeeUseCaseTests
 
         var useCase = CreateUseCase();
 
-        // Act
         var registrationId = await useCase.ExecuteAsync(
             "Outro Nome",
             "lucas@email.com",
             "61888888888");
 
-        // Assert
         Assert.Equal(originalId, registrationId);
         Assert.Same(existingRegistration, _pendingRepository.Registration);
 
@@ -120,7 +111,6 @@ public class RegisterEmployeeUseCaseTests
         Assert.Equal(1, existingRegistration.ResendCount);
         Assert.Equal(0, existingRegistration.FailedAttempts);
 
-        // O cadastro original é reutilizado.
         Assert.Equal("Lucas Domingos", existingRegistration.FullName);
         Assert.Equal("61999999999", existingRegistration.PhoneNumber);
 
@@ -132,21 +122,18 @@ public class RegisterEmployeeUseCaseTests
     [Fact]
     public async Task ExecuteAsync_WhenResendCooldownHasNotElapsed_ShouldThrowException()
     {
-        // Arrange
         var existingRegistration = CreateExistingRegistration();
 
         _pendingRepository.SetRegistration(existingRegistration);
 
         var useCase = CreateUseCase();
 
-        // Act
         var exception = await Assert.ThrowsAsync<InvalidOperationException>(
             () => useCase.ExecuteAsync(
                 "Lucas Domingos",
                 "lucas@email.com",
                 "61999999999"));
 
-        // Assert
         Assert.Equal(
             "Aguarde antes de solicitar um novo código.",
             exception.Message);
@@ -159,7 +146,6 @@ public class RegisterEmployeeUseCaseTests
     [Fact]
     public async Task ExecuteAsync_WhenResendLimitHasBeenReached_ShouldThrowException()
     {
-        // Arrange
         var existingRegistration = CreateExistingRegistration();
 
         SetPrivateProperty(
@@ -176,14 +162,12 @@ public class RegisterEmployeeUseCaseTests
 
         var useCase = CreateUseCase();
 
-        // Act
         var exception = await Assert.ThrowsAsync<InvalidOperationException>(
             () => useCase.ExecuteAsync(
                 "Lucas Domingos",
                 "lucas@email.com",
                 "61999999999"));
 
-        // Assert
         Assert.Equal(
             "O limite de reenvios de código foi atingido.",
             exception.Message);
@@ -195,7 +179,6 @@ public class RegisterEmployeeUseCaseTests
     [Fact]
     public async Task ExecuteAsync_WhenPendingRegistrationIsExpired_ShouldAllowRenewal()
     {
-        // Arrange
         var existingRegistration = CreateExistingRegistration();
 
         SetPrivateProperty(
@@ -212,13 +195,11 @@ public class RegisterEmployeeUseCaseTests
 
         var useCase = CreateUseCase();
 
-        // Act
         var registrationId = await useCase.ExecuteAsync(
             "Lucas Domingos",
             "lucas@email.com",
             "61999999999");
 
-        // Assert
         Assert.Equal(existingRegistration.Id, registrationId);
         Assert.True(existingRegistration.ExpiresAt > DateTime.UtcNow);
         Assert.Equal("hash:123456", existingRegistration.CodeHash);
@@ -230,7 +211,6 @@ public class RegisterEmployeeUseCaseTests
     [Fact]
     public async Task ExecuteAsync_WhenPendingRegistrationIsAlreadyVerified_ShouldThrowException()
     {
-        // Arrange
         var existingRegistration = CreateExistingRegistration();
 
         existingRegistration.MarkAsVerified(DateTime.UtcNow);
@@ -239,14 +219,12 @@ public class RegisterEmployeeUseCaseTests
 
         var useCase = CreateUseCase();
 
-        // Act
         var exception = await Assert.ThrowsAsync<InvalidOperationException>(
             () => useCase.ExecuteAsync(
                 "Lucas Domingos",
                 "lucas@email.com",
                 "61999999999"));
 
-        // Assert
         Assert.Equal(
             "Esta verificação já foi concluída.",
             exception.Message);
@@ -258,20 +236,17 @@ public class RegisterEmployeeUseCaseTests
     [Fact]
     public async Task ExecuteAsync_WhenEmailSendingFails_ShouldPropagateExceptionAfterSaving()
     {
-        // Arrange
         _emailService.ExceptionToThrow =
             new InvalidOperationException("Falha no envio do e-mail.");
 
         var useCase = CreateUseCase();
 
-        // Act
         var exception = await Assert.ThrowsAsync<InvalidOperationException>(
             () => useCase.ExecuteAsync(
                 "Lucas Domingos",
                 "lucas@email.com",
                 "61999999999"));
 
-        // Assert
         Assert.Equal("Falha no envio do e-mail.", exception.Message);
 
         Assert.NotNull(_pendingRepository.Registration);
@@ -324,6 +299,14 @@ public class RegisterEmployeeUseCaseTests
         }
 
         public Task<Employee?> GetByIdAsync(
+            Guid id,
+            CancellationToken cancellationToken = default)
+        {
+            return Task.FromResult(
+                _employees.FirstOrDefault(employee => employee.Id == id));
+        }
+
+        public Task<Employee?> GetByIdWithWhatsAppContactsAsync(
             Guid id,
             CancellationToken cancellationToken = default)
         {
