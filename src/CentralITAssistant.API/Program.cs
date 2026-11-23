@@ -6,6 +6,7 @@ using CentralITAssistant.Infrastructure.Persistence.Context;
 using CentralITAssistant.Infrastructure.Persistence.Repositories;
 using CentralITAssistant.Infrastructure.Services.Email;
 using CentralITAssistant.Infrastructure.Services.Security;
+using CentralITAssistant.Infrastructure.Services.Telegram;
 using CentralITAssistant.Infrastructure.Services.WhatsAppApp;
 using Microsoft.EntityFrameworkCore;
 
@@ -63,6 +64,33 @@ builder.Services.AddScoped<IEmailService>(
 
 // WhatsApp Service
 builder.Services.AddScoped<IWhatsAppService, WhatsAppService>();
+
+// Telegram HTTP Client
+builder.Services.AddHttpClient("Telegram", client =>
+{
+    client.BaseAddress = new Uri("https://api.telegram.org/");
+});
+
+// Telegram Services
+builder.Services.AddScoped<IMessageChannel>(serviceProvider =>
+{
+    var httpClientFactory = serviceProvider
+        .GetRequiredService<System.Net.Http.IHttpClientFactory>();
+
+    var configuration = serviceProvider
+        .GetRequiredService<IConfiguration>();
+
+    var botToken = configuration["Telegram:BotToken"]
+        ?? throw new InvalidOperationException(
+            "O token do bot do Telegram não foi configurado.");
+
+    var httpClient = httpClientFactory.CreateClient("Telegram");
+
+    return new TelegramBotService(httpClient, botToken);
+});
+
+// Telegram Background Service
+builder.Services.AddHostedService<TelegramPollingService>();
 
 // Employee Use Cases
 builder.Services.AddScoped<RegisterEmployeeUseCase>();
