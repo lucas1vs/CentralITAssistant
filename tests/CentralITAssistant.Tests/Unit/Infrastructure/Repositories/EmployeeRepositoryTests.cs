@@ -74,6 +74,39 @@ public class EmployeeRepositoryTests
     }
 
     [Fact]
+    public async Task GetByIdWithWhatsAppContactsAsync_ShouldReturnEmployeeWithWhatsAppContacts()
+    {
+        await using var database =
+            await SqliteTestDatabase.CreateAsync();
+
+        var repository = new EmployeeRepository(database.Context);
+
+        var employee = new Employee(
+            "Lucas Domingos",
+            "lucas@gmail.com");
+
+        var contact = new WhatsAppContact("5561999999999");
+
+        employee.AssociateWhatsAppContact(contact);
+
+        database.Context.Employees.Add(employee);
+        await database.Context.SaveChangesAsync();
+
+        database.Context.ChangeTracker.Clear();
+
+        var result = await repository.GetByIdWithWhatsAppContactsAsync(
+            employee.Id);
+
+        Assert.NotNull(result);
+        Assert.Equal(employee.Id, result.Id);
+
+        var persistedContact = Assert.Single(result.WhatsAppContacts);
+
+        Assert.Equal(contact.Id, persistedContact.Id);
+        Assert.Equal(contact.PhoneNumber, persistedContact.PhoneNumber);
+    }
+
+    [Fact]
     public async Task GetByPersonalEmailAsync_ShouldReturnEmployee()
     {
         await using var database =
