@@ -1,9 +1,11 @@
+
 using CentralITAssistant.Application.Abstractions.Persistence;
 using CentralITAssistant.Application.Abstractions.Services;
 using CentralITAssistant.Application.UseCases.Employees;
 using CentralITAssistant.Application.UseCases.WhatsApp;
 using CentralITAssistant.Infrastructure.Persistence.Context;
 using CentralITAssistant.Infrastructure.Persistence.Repositories;
+using CentralITAssistant.Infrastructure.Services.AI;
 using CentralITAssistant.Infrastructure.Services.Email;
 using CentralITAssistant.Infrastructure.Services.Security;
 using CentralITAssistant.Infrastructure.Services.Telegram;
@@ -75,7 +77,7 @@ builder.Services.AddHttpClient("Telegram", client =>
 builder.Services.AddScoped<IMessageChannel>(serviceProvider =>
 {
     var httpClientFactory = serviceProvider
-        .GetRequiredService<System.Net.Http.IHttpClientFactory>();
+        .GetRequiredService<IHttpClientFactory>();
 
     var configuration = serviceProvider
         .GetRequiredService<IConfiguration>();
@@ -91,6 +93,31 @@ builder.Services.AddScoped<IMessageChannel>(serviceProvider =>
 
 // Telegram Background Service
 builder.Services.AddHostedService<TelegramPollingService>();
+
+// Meta AI Service
+var metaApiKey = builder.Configuration["Meta:ApiKey"]
+    ?? throw new InvalidOperationException(
+        "A chave Meta:ApiKey não foi configurada.");
+
+var metaModel = builder.Configuration["Meta:Model"]
+    ?? "muse-spark-1.3";
+
+// Meta HTTP Client
+builder.Services.AddHttpClient("MetaAI");
+
+// AI Service
+builder.Services.AddScoped<IAiService>(serviceProvider =>
+{
+    var httpClientFactory = serviceProvider
+        .GetRequiredService<IHttpClientFactory>();
+
+    var httpClient = httpClientFactory.CreateClient("MetaAI");
+
+    return new MetaAiService(
+        httpClient,
+        metaApiKey,
+        metaModel);
+});
 
 // Employee Use Cases
 builder.Services.AddScoped<RegisterEmployeeUseCase>();
