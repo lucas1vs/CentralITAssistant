@@ -1,115 +1,228 @@
-# CentralITAssistant
+# CentralITAssistant — Lucia
 
-**Assistente inteligente para colaboradores da Central IT, acessível pelo WhatsApp.**
+**Assistente Inteligente da Central IT**
 
-O CentralITAssistant é um projeto de desenvolvimento de um assistente virtual baseado em Inteligência Artificial, cujo objetivo é facilitar o acesso dos colaboradores a informações internas, procedimentos e orientações corporativas.
+O **CentralITAssistant**, também chamado de **Lucia**, é um projeto de assistente virtual inteligente desenvolvido com o objetivo de facilitar o atendimento interno de TI, oferecendo aos colaboradores um canal de comunicação para consultar informações, esclarecer dúvidas e obter orientações sobre procedimentos e serviços de tecnologia.
 
-A proposta é disponibilizar um canal de comunicação simples e acessível, permitindo que os funcionários consultem informações e recebam notificações sobre reuniões, eventos e atividades relacionadas ao ambiente corporativo.
+A proposta é centralizar o atendimento e tornar a comunicação entre os colaboradores e a equipe de TI mais ágil, acessível e eficiente.
 
-> **Status:** Em desenvolvimento — MVP.
+---
 
 ## Objetivos do projeto
 
-- Disponibilizar um assistente virtual acessível pelo WhatsApp.
-- Responder dúvidas dos colaboradores com base em informações corporativas confiáveis.
-- Centralizar orientações sobre serviços, procedimentos e processos internos.
-- Enviar notificações sobre reuniões, eventos e atividades de onboarding.
-- Implementar identificação e verificação de colaboradores por e-mail corporativo.
-- Construir uma arquitetura preparada para futuras integrações com sistemas corporativos.
-
-## Funcionalidades planejadas para o MVP
-
-- [ ] Integração com WhatsApp.
-- [ ] Identificação de colaboradores.
-- [ ] Verificação de identidade por código OTP enviado ao e-mail corporativo.
-- [ ] Atendimento automatizado com Inteligência Artificial.
-- [ ] Consulta de informações e procedimentos internos.
-- [ ] Notificações de reuniões e eventos.
-- [ ] Integração futura com Microsoft Graph para recursos de calendário.
-
-O CITSmart será utilizado inicialmente como fonte de referência para informações e procedimentos, sem depender de integração direta com sua API.
+- Facilitar o atendimento de solicitações internas de TI.
+- Permitir que colaboradores consultem informações por meio de linguagem natural.
+- Automatizar etapas de identificação e validação de colaboradores.
+- Implementar autenticação por código de verificação enviado por e-mail corporativo.
+- Integrar um modelo de inteligência artificial para interpretação e geração de respostas.
+- Preparar a integração com o WhatsApp como canal de atendimento.
+- Estruturar uma arquitetura escalável para futuras funcionalidades.
 
 ## Arquitetura
 
-O projeto utiliza os princípios da **Clean Architecture**, mantendo as responsabilidades separadas entre as camadas.
+O projeto utiliza **Clean Architecture**, organizando as responsabilidades em camadas independentes para facilitar manutenção, testes e evolução.
 
 ```text
-CentralITAssistant
+CentralITAssistant/
 │
-├── src
-│   ├── CentralITAssistant.API
+├── src/
+│   ├── CentralITAssistant.Domain/
 │   │
-│   ├── CentralITAssistant.Application
+│   ├── CentralITAssistant.Application/
 │   │
-│   ├── CentralITAssistant.Domain
+│   ├── CentralITAssistant.Infrastructure/
 │   │
-│   └── CentralITAssistant.Infrastructure
+│   └── CentralITAssistant.API/
 │
-└── tests
-    └── CentralITAssistant.Tests
+├── tests/
+│   └── CentralITAssistant.Tests/
+│
+├── CentralITAssistant.sln
+└── README.md
 ```
 
-### Responsabilidades
+### Responsabilidades das camadas
 
 | Camada | Responsabilidade |
 |---|---|
-| API | Exposição dos endpoints e comunicação HTTP. |
-| Application | Casos de uso, contratos e regras de aplicação. |
-| Domain | Entidades e regras de negócio. |
-| Infrastructure | Persistência, banco de dados e integrações externas. |
+| Domain | Entidades e regras de negócio centrais. |
+| Application | Casos de uso, contratos e abstrações. |
+| Infrastructure | Persistência, serviços externos e integrações. |
+| API | Endpoints, configuração e exposição dos serviços. |
 | Tests | Testes automatizados da aplicação. |
 
 ## Tecnologias utilizadas
 
-- **C#**
-- **.NET 9**
-- **ASP.NET Core Web API**
-- **Entity Framework Core 9**
-- **SQL Server**
-- **SQLite** para testes automatizados
-- **xUnit**
-- **Swagger / Swashbuckle**
-- **Git e GitHub**
-- **Docker** — previsto para evolução do ambiente.
+- **C#** — linguagem principal.
+- **.NET 9** — plataforma de desenvolvimento.
+- **ASP.NET Core** — construção da API.
+- **Entity Framework Core 9** — ORM e persistência.
+- **SQL Server** — banco de dados principal.
+- **SQLite** — suporte aos testes automatizados.
+- **xUnit** — testes unitários.
+- **Swashbuckle / Swagger** — documentação e exploração da API.
+- **Meta Model API** — integração com modelo de inteligência artificial.
+- **Muse Spark 1.3** — modelo configurado para geração de respostas.
+- **HttpClient** — comunicação com serviços externos.
+- **HMAC-SHA256** — proteção dos códigos de verificação.
+- **Git e GitHub** — versionamento e gerenciamento do código.
+- **Docker** — previsto para a etapa de containerização.
+
+## Inteligência artificial
+
+A Lucia possui uma estrutura de integração com a **Meta Model API**, utilizando o modelo **Muse Spark 1.3** por meio da Responses API.
+
+A integração foi desenvolvida com:
+
+- Abstração `IAiService` na camada Application.
+- Implementação `MetaAiService` na camada Infrastructure.
+- Comunicação HTTP utilizando `HttpClient`.
+- Configuração do modelo e da chave de API por User Secrets.
+- Registro de dependência na API.
+- Testes unitários utilizando um `HttpMessageHandler` simulado.
+- Teste de integração em ambiente real.
+
+**Status da integração:** implementação e testes unitários concluídos. A validação com a API real permanece pendente devido a uma resposta HTTP 402 (Payment Required), sendo necessário verificar as condições de acesso e faturamento da plataforma.
+
+A chave de API não deve ser armazenada no repositório.
+
+## Autenticação e segurança
+
+O projeto contempla uma estrutura de validação de colaboradores por e-mail corporativo.
+
+O fluxo planejado utiliza códigos OTP (*One-Time Password*) com as seguintes regras:
+
+| Parâmetro | Configuração |
+|---|---|
+| Tamanho do código | 6 dígitos |
+| Validade | 5 minutos |
+| Tentativas máximas | 5 |
+| Intervalo de reenvio | 60 segundos |
+| Reenvios máximos | 5 |
+| Proteção | HMAC-SHA256 |
+
+O envio de e-mails é abstraído por meio da interface `IEmailService`, permitindo que o provedor seja implementado ou substituído sem acoplar a lógica de negócio a uma tecnologia específica.
+
+As credenciais e informações sensíveis devem permanecer fora do controle de versão.
 
 ## Banco de dados
 
-A persistência utiliza Entity Framework Core com abordagem Code First e configurações Fluent API.
+A persistência utiliza Entity Framework Core com abordagem Code First e SQL Server.
 
-Entidades iniciais:
+As entidades iniciais do domínio incluem:
 
 - `Employee`
 - `WhatsAppContact`
 - `Conversation`
 
-As migrations são utilizadas para versionar a estrutura do banco de dados.
+As alterações de estrutura do banco são controladas por migrations do Entity Framework Core.
+
+## Integrações e canais de atendimento
+
+### WhatsApp
+
+O WhatsApp é o canal de atendimento previsto para a Lucia, com integração planejada por meio da Meta WhatsApp Cloud API e utilização de webhooks para recebimento de mensagens.
+
+### E-mail corporativo
+
+O Zimbra foi considerado como referência para o fluxo de verificação de e-mail corporativo.
+
+### Base de conhecimento
+
+O CITSmart é considerado uma referência inicial para informações e procedimentos de TI, sem integração direta por API estabelecida até o momento.
+
+### Telegram
+
+O Telegram foi utilizado temporariamente como alternativa para testes de fluxos durante o desenvolvimento.
 
 ## Testes automatizados
 
-O projeto utiliza xUnit para validar as regras de negócio e os componentes de persistência.
+O projeto utiliza xUnit para validar regras de negócio, serviços e integrações.
 
-**Estado atual:** 48 testes automatizados aprovados.
+Os testes incluem:
 
-Os testes de repositório utilizam SQLite em memória, permitindo executar verificações isoladas sem depender do banco SQL Server de desenvolvimento.
+- Validação das entidades do domínio.
+- Regras de negócio.
+- Comportamento dos serviços.
+- Tratamento de respostas HTTP.
+- Testes da integração com o serviço de IA utilizando respostas simuladas.
+- Teste opcional de integração real com a Meta Model API.
+
+Para executar a suíte de testes:
+
+```powershell
+dotnet test
+```
+
+Para executar somente os testes da integração real com a Meta Model API, configure a variável de ambiente:
+
+```powershell
+$env:RUN_META_LIVE_TESTS = "true"
+dotnet test
+```
+
+A execução do teste real depende de uma chave válida e de acesso habilitado à plataforma.
+
+## Configuração do ambiente
+
+### Pré-requisitos
+
+- .NET SDK 9.
+- SQL Server.
+- Visual Studio ou Visual Studio Code.
+- Git.
+- Acesso à Meta Model API para executar a integração real.
+
+### Configuração da Meta Model API
+
+As configurações devem ser armazenadas utilizando .NET User Secrets:
+
+```powershell
+dotnet user-secrets set "Meta:ApiKey" "SUA_CHAVE" --project .\src\CentralITAssistant.API
+
+dotnet user-secrets set "Meta:Model" "muse-spark-1.3" --project .\src\CentralITAssistant.API
+```
+
+Não compartilhe sua chave de API e não a inclua em arquivos versionados.
+
+### Executando a API
+
+Na raiz da solução:
+
+```powershell
+dotnet restore
+dotnet build
+dotnet run --project .\src\CentralITAssistant.API
+```
+
+A documentação da API pode ser acessada pelo Swagger, conforme a configuração do ambiente.
 
 ## Próximas etapas
 
 - [x] Estrutura inicial da solução.
-- [x] Separação das camadas da Clean Architecture.
-- [x] Implementação das entidades iniciais.
+- [x] Implementação das primeiras entidades do domínio.
+- [x] Criação dos testes automatizados iniciais.
 - [x] Configuração do Entity Framework Core.
-- [x] Primeira migration.
-- [x] Implementação do EmployeeRepository.
-- [x] Testes automatizados iniciais.
-- [x] Configuração do Swagger.
-- [ ] Implementação dos demais repositórios.
-- [ ] Desenvolvimento dos casos de uso.
-- [ ] Implementação da autenticação e verificação de colaboradores.
-- [ ] Integração com WhatsApp.
-- [ ] Integração com Inteligência Artificial.
-- [ ] Implementação da base de conhecimento.
-- [ ] Sistema de notificações e agenda.
+- [x] Estruturação do fluxo de autenticação por e-mail.
+- [x] Criação da abstração do serviço de inteligência artificial.
+- [x] Implementação da integração com a Meta Model API.
+- [x] Criação dos testes unitários da integração com IA.
+- [ ] Validar a integração real com a Meta Model API.
+- [ ] Evoluir a integração com o WhatsApp Cloud API.
+- [ ] Implementar os webhooks de recebimento de mensagens.
+- [ ] Evoluir a integração com o Zimbra.
+- [ ] Desenvolver a integração com a base de conhecimento.
+- [ ] Aprimorar o fluxo de conversação e interpretação de intenções.
+- [ ] Preparar a aplicação para execução com Docker.
+- [ ] Realizar deploy e validação final.
+
+## Versionamento
+
+O projeto utiliza Git e GitHub para controle de versão.
+
+**Repositório:** [CentralITAssistant](https://github.com/lucas1vs/CentralITAssistant)
 
 ---
 
-**CentralITAssistant** — Projeto desenvolvido em C# e .NET, com foco em arquitetura limpa, automação e Inteligência Artificial aplicada ao ambiente corporativo.
+**CentralITAssistant — Lucia**  
+*Inteligência artificial aplicada ao atendimento interno de TI.*
